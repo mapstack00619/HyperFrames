@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyperframes Studio Preview — Live Traffic GIS Explainer (7 Scenes)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050811;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .font-mono-code {
+      font-family: "JetBrains Mono", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* =====================================================================
+       HYPERFRAMES 9:16 COMPOSITION STAGE (EXACT 1080 x 1920)
+       ===================================================================== */
+    #composition {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #0b1220 0%, #0f1b2d 55%, #0b1220 100%);
+      transform-origin: center center;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(56, 189, 248, 0.22);
+      flex-shrink: 0;
+    }
+
+    .stage-svg {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      display: block;
+    }
+
+    .scene-layer {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Bottom Safe-Area On-Screen Caption Pill (Generous Buffers & Auto-Sizing Grid) */
+    .caption-safe-zone {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 110px;
+      padding: 0 68px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .caption-pill {
+      position: relative;
+      width: 100%;
+      min-height: 224px;
+      background: rgba(11, 18, 32, 0.9);
+      border: 1.5px solid rgba(56, 189, 248, 0.32);
+      border-radius: 30px;
+      padding: 38px 52px;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+      justify-items: center;
+      text-align: center;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+    }
+
+    .caption-text {
+      grid-area: 1 / 1;
+      position: relative;
+      width: 100%;
+      margin: 0;
+      padding: 4px 6px;
+      font-size: 36px;
+      font-weight: 600;
+      line-height: 1.38;
+      letter-spacing: -0.01em;
+      color: #f8fafc;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* Custom Timeline Scrubber Styling */
+    .scrubber-hitarea:hover .scrubber-track {
+      height: 8px;
+    }
+    .scrubber-hitarea:hover .scrubber-thumb {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#050811] text-slate-100">
+
+  <!-- =======================================================================
+       OUTER STUDIO PREVIEWER HEADER (NOT PART OF #composition)
+       ======================================================================= -->
+  <header class="h-14 shrink-0 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-2 z-30">
+    <!-- Left: Composition Spec Badge -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 shrink-0">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="2" width="12" height="20" rx="2.5" />
+          <polygon points="10 9 15 12 10 15 10 9" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-semibold text-xs sm:text-sm tracking-tight text-white">
+          1080×1920 • 30 FPS • 38.0s • 7 Scenes
+        </span>
+        <span id="zoom-badge" class="hidden md:inline-flex px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono-code text-[11px] text-slate-400">
+          Scale: 42%
+        </span>
+      </div>
+    </div>
+
+    <!-- Center: Scene Jump Pills (S1 Hook through S7 Overlays) -->
+    <nav aria-label="Scene Jump Navigation" class="flex items-center gap-1 overflow-x-auto max-w-full py-0.5">
+      <button type="button" data-seek="0" data-scene-idx="1" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40 transition cursor-pointer whitespace-nowrap">
+        S1 Hook
+      </button>
+      <button type="button" data-seek="3" data-scene-idx="2" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S2 Telemetry
+      </button>
+      <button type="button" data-seek="9" data-scene-idx="3" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S3 Crowd
+      </button>
+      <button type="button" data-seek="15" data-scene-idx="4" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S4 Anonymize
+      </button>
+      <button type="button" data-seek="21" data-scene-idx="5" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S5 Endpoints
+      </button>
+      <button type="button" data-seek="27" data-scene-idx="6" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S6 Threshold
+      </button>
+      <button type="button" data-seek="33" data-scene-idx="7" class="scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+        S7 Overlays
+      </button>
+    </nav>
+
+    <!-- Right: Copy Standalone Hyperframes HTML Button -->
+    <div class="flex items-center gap-2 shrink-0">
+      <button
+        id="btn-copy-html"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-200 transition cursor-pointer"
+        title="Copy clean standalone 1080x1920 Hyperframes HTML without Studio Previewer UI"
+      >
+        <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+        <span id="copy-btn-label" class="hidden sm:inline">Copy Standalone HTML</span>
+        <span class="sm:hidden">Copy HTML</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =======================================================================
+       CENTER RESPONSIVE VIEWPORT STAGE (SCALES 1080x1920 TO FIT SCREEN)
+       ======================================================================= -->
+  <main id="viewport-stage" class="flex-1 relative w-full h-full flex items-center justify-center overflow-hidden p-3 sm:p-5">
+    <!-- Ambient studio grid backdrop -->
+    <div class="absolute inset-0 opacity-20 pointer-events-none"
+         style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 24px 24px;"></div>
+
+    <!-- Layout box matching scaled visual footprint -->
+    <div id="scale-wrapper" class="relative flex items-center justify-center">
+      <!-- ===================================================================
+           EXACT 1080x1920 HYPERFRAMES COMPOSITION (ZERO UI BUTTONS/LOGOS)
+           =================================================================== -->
+      <div id="composition" data-fps="30" data-duration="38">
+        <svg id="master-svg" class="stage-svg" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Soft Glow Filters for Traffic Overlay & Cyan Signals -->
+            <filter id="glow-traffic" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="12" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+
+            <filter id="glow-cyan" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="8" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+
+            <!-- Subtle Background Dot Matrix Pattern -->
+            <pattern id="bg-dots" width="60" height="60" patternUnits="userSpaceOnUse">
+              <circle cx="30" cy="30" r="1.5" fill="#1e293b" opacity="0.65" />
+            </pattern>
+
+            <!-- Cloud Interior Micro-Grid Pattern (Scene 3) -->
+            <pattern id="cloud-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+              <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.22" />
+              <circle cx="0" cy="0" r="2" fill="#38bdf8" opacity="0.45" />
+            </pattern>
+
+            <!-- Scene 3 Horizontal Wipe Clipping Mask (Left-to-Right Exit) -->
+            <clipPath id="s3-wipe-clip">
+              <rect id="s3-wipe-rect" x="0" y="0" width="1080" height="1920" />
+            </clipPath>
+
+            <!-- Scene 5 Horizontal Wipe Clipping Mask (Left-to-Right Exit) -->
+            <clipPath id="s5-wipe-clip">
+              <rect id="s5-wipe-rect" x="0" y="0" width="1080" height="1920" />
+            </clipPath>
+
+            <!-- Scene 3 Scanning Beam & Illuminated Segment Gradients -->
+            <linearGradient id="s3-beam-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.55" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.06" />
+            </linearGradient>
+          </defs>
+
+          <!-- Ambient Dot Field -->
+          <rect width="1080" height="1920" fill="url(#bg-dots)" />
+
+          <!-- ===============================================================
+               SCENE 1 (0.0s – 3.0s): HOOK — The Live Traffic Question
+               =============================================================== -->
+          <g id="scene-1" class="scene-layer" style="opacity: 1; visibility: visible;">
+            <g id="s1-camera" transform-origin="540 860">
+              <!-- Minimalist Top-Down Vector Road Grid in Muted Slate-Blue (#1e293b) -->
+              <g id="s1-grid" transform-origin="540 860" stroke="#1e293b" stroke-linecap="round" fill="none">
+                <!-- Horizontal & Angled Secondary Streets -->
+                <line x1="60" y1="300" x2="1020" y2="300" stroke-width="14" />
+                <line x1="60" y1="560" x2="1020" y2="560" stroke-width="16" />
+                <line x1="60" y1="820" x2="1020" y2="820" stroke-width="14" />
+                <line x1="60" y1="1080" x2="1020" y2="1080" stroke-width="16" />
+                <line x1="60" y1="1340" x2="1020" y2="1340" stroke-width="14" />
+
+                <!-- Vertical Secondary Streets -->
+                <line x1="210" y1="160" x2="210" y2="1460" stroke-width="14" />
+                <line x1="430" y1="160" x2="430" y2="1460" stroke-width="14" />
+                <line x1="650" y1="160" x2="650" y2="1460" stroke-width="14" />
+                <line x1="870" y1="160" x2="870" y2="1460" stroke-width="14" />
+
+                <!-- Cross Connector -->
+                <line x1="120" y1="430" x2="960" y2="1220" stroke-width="14" />
+              </g>
+
+              <!-- Base Diagonal Highway Artery -->
+              <line x1="90" y1="1440" x2="880" y2="310" stroke="#1e293b" stroke-width="32" stroke-linecap="round" />
+
+              <!-- Glowing Color-Coded Traffic Segments Drawing Upward -->
+              <g filter="url(#glow-traffic)" stroke-linecap="round" fill="none">
+                <!-- Bottom: Emerald Green (#22c55e) -->
+                <line id="s1-seg-green" x1="90" y1="1440" x2="395" y2="1003"
+                      stroke="#22c55e" stroke-width="16" stroke-dasharray="540" stroke-dashoffset="540" />
+                <!-- Middle: Warm Amber (#f59e0b) -->
+                <line id="s1-seg-amber" x1="395" y1="1003" x2="640" y2="653"
+                      stroke="#f59e0b" stroke-width="16" stroke-dasharray="435" stroke-dashoffset="435" />
+                <!-- Top: Crimson Red (#ef4444) -->
+                <line id="s1-seg-red" x1="640" y1="653" x2="880" y2="310"
+                      stroke="#ef4444" stroke-width="16" stroke-dasharray="425" stroke-dashoffset="425" />
+              </g>
+
+              <!-- Three Small White Circular Vehicle Nodes (#f8fafc) with Pulsing Cyan Rings (#38bdf8) -->
+              <g id="s1-veh-1" transform="translate(145, 1361)">
+                <circle id="s1-ring-1" cx="0" cy="0" r="12" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.9" />
+                <circle cx="0" cy="0" r="10" fill="#f8fafc" />
+              </g>
+              <g id="s1-veh-2" transform="translate(435, 946)">
+                <circle id="s1-ring-2" cx="0" cy="0" r="12" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.9" />
+                <circle cx="0" cy="0" r="10" fill="#f8fafc" />
+              </g>
+              <g id="s1-veh-3" transform="translate(730, 524)">
+                <circle id="s1-ring-3" cx="0" cy="0" r="12" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.9" />
+                <circle cx="0" cy="0" r="10" fill="#f8fafc" />
+              </g>
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 2 (3.0s – 9.0s): BEAT 1 — Device GPS & Speed Telemetry
+               =============================================================== -->
+          <g id="scene-2" class="scene-layer">
+            <g id="s2-slide-group">
+              <!-- Curved Dotted Telemetry Arcs Rising Into Cloud -->
+              <g fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="8 12" opacity="0.35">
+                <path d="M 215 1270 Q 290 820 485 385" />
+                <path d="M 375 1230 Q 415 800 512 385" />
+                <path d="M 540 1215 L 540 385" />
+                <path d="M 705 1230 Q 665 800 568 385" />
+                <path d="M 855 1270 Q 790 820 595 385" />
+              </g>
+
+              <!-- Upper Third: Geometric Cloud Cluster (#1e293b fill, #64748b outline) -->
+              <g transform="translate(540, 350)">
+                <path d="M -190 55 C -235 55 -265 20 -265 -20 C -265 -62 -232 -95 -190 -95 C -182 -148 -135 -188 -78 -188 C -36 -188 1 -166 22 -134 C 42 -152 68 -162 98 -162 C 158 -162 206 -115 208 -56 C 244 -46 270 -14 270 25 C 270 70 234 105 188 105 L -175 105 C -212 105 -242 82 -245 48"
+                      fill="#1e293b" stroke="#64748b" stroke-width="4" stroke-linejoin="round" />
+                <!-- Inner Server Core Node Accent -->
+                <circle cx="0" cy="-35" r="24" fill="#0f1b2d" stroke="#38bdf8" stroke-width="3" opacity="0.85" />
+                <circle cx="0" cy="-35" r="8" fill="#38bdf8" filter="url(#glow-cyan)" />
+              </g>
+
+              <!-- Rhythmic Streams of Glowing Cyan Data Packets (Circles = Location, Dashes = Speed Vectors) -->
+              <g filter="url(#glow-cyan)">
+                <circle id="s2-w1-loc" cx="215" cy="1270" r="8" fill="#38bdf8" opacity="0" />
+                <rect id="s2-w1-spd" x="229" y="1266" width="22" height="6" rx="3" fill="#38bdf8" opacity="0" />
+
+                <circle id="s2-w2-loc" cx="375" cy="1230" r="8" fill="#38bdf8" opacity="0" />
+                <rect id="s2-w2-spd" x="389" y="1226" width="22" height="6" rx="3" fill="#38bdf8" opacity="0" />
+
+                <circle id="s2-w3-loc" cx="540" cy="1215" r="8" fill="#38bdf8" opacity="0" />
+                <rect id="s2-w3-spd" x="554" y="1211" width="22" height="6" rx="3" fill="#38bdf8" opacity="0" />
+
+                <circle id="s2-w4-loc" cx="705" cy="1230" r="8" fill="#38bdf8" opacity="0" />
+                <rect id="s2-w4-spd" x="719" y="1226" width="22" height="6" rx="3" fill="#38bdf8" opacity="0" />
+
+                <circle id="s2-w5-loc" cx="855" cy="1270" r="8" fill="#38bdf8" opacity="0" />
+                <rect id="s2-w5-spd" x="869" y="1266" width="22" height="6" rx="3" fill="#38bdf8" opacity="0" />
+              </g>
+
+              <!-- Lower Third: Curved Vector Road Path (#334155) Positioned Above Caption Buffer -->
+              <path d="M 60 1355 Q 540 1195 1020 1355" fill="none" stroke="#334155" stroke-width="46" stroke-linecap="round" />
+              <path d="M 60 1355 Q 540 1195 1020 1355" fill="none" stroke="#0f1b2d" stroke-width="4" stroke-dasharray="22 20" stroke-linecap="round" />
+
+              <!-- Sleek Flat Geometric Smartphone Silhouette (#1e293b body with #38bdf8 glowing border) -->
+              <g id="s2-phone-mover" transform="translate(175, 1305)">
+                <g id="s2-phone-pulse" transform-origin="0 0">
+                  <rect x="-44" y="-82" width="88" height="164" rx="18" fill="#1e293b" stroke="#38bdf8" stroke-width="3.5" filter="url(#glow-cyan)" />
+                  <rect x="-34" y="-66" width="68" height="132" rx="10" fill="#0b1220" />
+                  <!-- Glowing Cyan Location Dot & Directional Chevron Inside Screen -->
+                  <circle cx="0" cy="6" r="16" fill="#38bdf8" fill-opacity="0.22" />
+                  <circle cx="0" cy="6" r="8" fill="#38bdf8" />
+                  <polygon points="0,-24 10,-8 0,-13 -10,-8" fill="#38bdf8" />
+                </g>
+              </g>
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 3 (9.0s – 15.0s): BEAT 2 — Crowd-Sourced Speed Analysis
+               =============================================================== -->
+          <g id="scene-3" class="scene-layer" clip-path="url(#s3-wipe-clip)">
+            <!-- Converging Dotted Streams from 8 Fanned-Out Phone Silhouettes to Central Core -->
+            <g fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 10" opacity="0.35">
+              <line x1="130" y1="1380" x2="515" y2="395" />
+              <line x1="247" y1="1360" x2="522" y2="395" />
+              <line x1="364" y1="1345" x2="529" y2="395" />
+              <line x1="481" y1="1337" x2="536" y2="395" />
+              <line x1="599" y1="1337" x2="544" y2="395" />
+              <line x1="716" y1="1345" x2="551" y2="395" />
+              <line x1="833" y1="1360" x2="558" y2="395" />
+              <line x1="950" y1="1380" x2="565" y2="395" />
+            </g>
+
+            <!-- Downward Scanning Beams Projected Onto Horizontal Road Below -->
+            <g id="s3-scan-beams" opacity="0">
+              <polygon id="s3-beam-cone" points="540,380 60,964 260,964" fill="url(#s3-beam-grad)" />
+              <line id="s3-beam-edge-l" x1="540" y1="380" x2="60" y2="964" stroke="#38bdf8" stroke-width="2" opacity="0.6" />
+              <line id="s3-beam-edge-r" x1="540" y1="380" x2="260" y2="964" stroke="#38bdf8" stroke-width="2" opacity="0.6" />
+              <rect id="s3-beam-bar" x="60" y="908" width="200" height="112" rx="14" fill="#38bdf8" fill-opacity="0.14" stroke="#38bdf8" stroke-width="2.5" />
+            </g>
+
+            <!-- Top Half: Central Server Node (#0f1b2d with Glowing #38bdf8 Core) -->
+            <g transform="translate(540, 380)">
+              <circle id="s3-core-pulse-ring" cx="0" cy="0" r="110" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0" />
+              <polygon points="0,-115 100,-58 100,58 0,115 -100,58 -100,-58"
+                       fill="#0f1b2d" stroke="#38bdf8" stroke-width="4" filter="url(#glow-cyan)" />
+              <polygon points="0,-82 71,-41 71,41 0,82 -71,41 -71,-41"
+                       fill="url(#cloud-grid)" stroke="#38bdf8" stroke-width="1.5" opacity="0.7" />
+              <circle id="s3-core-orb" cx="0" cy="0" r="30" fill="#38bdf8" filter="url(#glow-cyan)" />
+            </g>
+
+            <!-- Middle-Lower Section: Horizontal Multi-Lane Road Vector (#1e293b) -->
+            <g transform="translate(0, 964)">
+              <rect x="60" y="-56" width="960" height="112" rx="20" fill="#1e293b" stroke="#334155" stroke-width="3" />
+              <line x1="90" y1="0" x2="990" y2="0" stroke="#0f1b2d" stroke-width="3.5" stroke-dasharray="24 20" />
+
+              <!-- Illuminated Traffic Segments Matching Dot Spacing -->
+              <g filter="url(#glow-traffic)">
+                <!-- Left Segment: Wide Spacing Turns Green (#22c55e) -->
+                <rect id="s3-road-green" x="76" y="-44" width="456" height="88" rx="14"
+                      fill="#22c55e" fill-opacity="0.34" stroke="#22c55e" stroke-width="4" opacity="0" />
+                <!-- Right Segment: Tight Clustering Turns Red (#ef4444) -->
+                <rect id="s3-road-red" x="548" y="-44" width="456" height="88" rx="14"
+                      fill="#ef4444" fill-opacity="0.36" stroke="#ef4444" stroke-width="4" opacity="0" />
+              </g>
+
+              <!-- Tiny Moving Geometric Dots: Wide Spacing on Left, Tight Clustering on Right -->
+              <g fill="#f8fafc">
+                <!-- Wide Spacing (Fast Flow) -->
+                <circle id="s3-dot-w1" cx="105" cy="-24" r="8" />
+                <circle id="s3-dot-w2" cx="255" cy="-24" r="8" />
+                <circle id="s3-dot-w3" cx="405" cy="-24" r="8" />
+                <circle id="s3-dot-w4" cx="170" cy="24" r="8" />
+                <circle id="s3-dot-w5" cx="345" cy="24" r="8" />
+
+                <!-- Tight Clustering (Congested Flow) -->
+                <circle id="s3-dot-c1" cx="575" cy="-24" r="8" />
+                <circle id="s3-dot-c2" cx="625" cy="-24" r="8" />
+                <circle id="s3-dot-c3" cx="675" cy="-24" r="8" />
+                <circle id="s3-dot-c4" cx="725" cy="-24" r="8" />
+                <circle id="s3-dot-c5" cx="775" cy="-24" r="8" />
+                <circle id="s3-dot-c6" cx="825" cy="-24" r="8" />
+                <circle id="s3-dot-c7" cx="600" cy="24" r="8" />
+                <circle id="s3-dot-c8" cx="655" cy="24" r="8" />
+                <circle id="s3-dot-c9" cx="710" cy="24" r="8" />
+                <circle id="s3-dot-c10" cx="785" cy="24" r="8" />
+                <circle id="s3-dot-c11" cx="845" cy="24" r="8" />
+              </g>
+            </g>
+
+            <!-- Streaming Data Packets Rising from All 8 Devices -->
+            <g fill="#38bdf8" filter="url(#glow-cyan)">
+              <circle id="s3-pkt-1" cx="130" cy="1380" r="7" opacity="0" />
+              <circle id="s3-pkt-2" cx="247" cy="1360" r="7" opacity="0" />
+              <circle id="s3-pkt-3" cx="364" cy="1345" r="7" opacity="0" />
+              <circle id="s3-pkt-4" cx="481" cy="1337" r="7" opacity="0" />
+              <circle id="s3-pkt-5" cx="599" cy="1337" r="7" opacity="0" />
+              <circle id="s3-pkt-6" cx="716" cy="1345" r="7" opacity="0" />
+              <circle id="s3-pkt-7" cx="833" cy="1360" r="7" opacity="0" />
+              <circle id="s3-pkt-8" cx="950" cy="1380" r="7" opacity="0" />
+            </g>
+
+            <!-- Eight Stylized Phone Silhouettes Fanned Out Along Bottom Edge (With Clean Buffer Above Caption) -->
+            <g fill="#1e293b" stroke="#38bdf8" stroke-width="2.5">
+              <g transform="translate(130, 1410) rotate(-14)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(247, 1390) rotate(-10)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(364, 1375) rotate(-6)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(481, 1367) rotate(-2)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(599, 1367) rotate(2)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(716, 1375) rotate(6)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(833, 1390) rotate(10)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+              <g transform="translate(950, 1410) rotate(14)">
+                <rect x="-20" y="-34" width="40" height="68" rx="8" />
+                <circle cx="0" cy="0" r="5" fill="#38bdf8" stroke="none" />
+              </g>
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 4 (15.0s – 21.0s): BEAT 3 — Anonymization & Aggregation
+               =============================================================== -->
+          <g id="scene-4" class="scene-layer">
+            <!-- Subtle Funnel Guide Lines Into Central Shield Prism -->
+            <g stroke="#334155" stroke-width="2" stroke-dasharray="8 12" fill="none" opacity="0.45">
+              <path d="M 220 340 Q 320 560 440 720" />
+              <path d="M 410 290 Q 455 520 500 720" />
+              <path d="M 670 290 Q 625 520 580 720" />
+              <path d="M 860 340 Q 760 560 640 720" />
+              <path d="M 540 970 L 540 1240" />
+            </g>
+
+            <!-- Bottom/Right Side: Unified Cluster of Identical Unlabelled Soft-White Circles (#e2e8f0) Inside Bounding Aura (#38bdf8 at 15% opacity) -->
+            <g id="s4-unified-cluster" transform="translate(560, 1260)" opacity="0">
+              <!-- Single Bounding Aura (#38bdf8 at 15% opacity) -->
+              <ellipse cx="0" cy="0" rx="235" ry="135" fill="#38bdf8" fill-opacity="0.15" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="3" />
+              <ellipse cx="0" cy="0" rx="185" ry="98" fill="none" stroke="#38bdf8" stroke-opacity="0.22" stroke-width="2" stroke-dasharray="10 10" />
+
+              <!-- Identical Uniform Soft-White Circles (#e2e8f0) Grouped Tightly Together -->
+              <circle cx="-95" cy="-16" r="18" fill="#e2e8f0" />
+              <circle cx="-42" cy="-34" r="18" fill="#e2e8f0" />
+              <circle cx="15" cy="-28" r="18" fill="#e2e8f0" />
+              <circle cx="72" cy="-14" r="18" fill="#e2e8f0" />
+              <circle cx="-68" cy="28" r="18" fill="#e2e8f0" />
+              <circle cx="-12" cy="22" r="18" fill="#e2e8f0" />
+              <circle cx="46" cy="26" r="18" fill="#e2e8f0" />
+              <circle cx="104" cy="14" r="18" fill="#e2e8f0" />
+            </g>
+
+            <!-- Left/Top Side: Six Distinct Geometric Shapes in Varied Pastel Tints -->
+            <!-- 1. Triangle (#f472b6) -->
+            <g id="s4-shape-1" transform="translate(210, 340)">
+              <polygon points="0,-30 28,22 -28,22" fill="#f472b6" />
+            </g>
+            <!-- 2. Square (#a78bfa) -->
+            <g id="s4-shape-2" transform="translate(345, 275)">
+              <rect x="-24" y="-24" width="48" height="48" rx="6" fill="#a78bfa" />
+            </g>
+            <!-- 3. Hexagon (#38bdf8) -->
+            <g id="s4-shape-3" transform="translate(480, 355)">
+              <polygon points="0,-28 24,-14 24,14 0,28 -24,14 -24,-14" fill="#38bdf8" />
+            </g>
+            <!-- 4. Diamond (#34d399) -->
+            <g id="s4-shape-4" transform="translate(615, 275)">
+              <polygon points="0,-30 26,0 0,30 -26,0" fill="#34d399" />
+            </g>
+            <!-- 5. Pentagon (#fbbf24) -->
+            <g id="s4-shape-5" transform="translate(745, 350)">
+              <polygon points="0,-28 27,-8 17,24 -17,24 -27,-8" fill="#fbbf24" />
+            </g>
+            <!-- 6. Star (#fb923c) -->
+            <g id="s4-shape-6" transform="translate(870, 290)">
+              <polygon points="0,-30 8,-10 30,-10 12,4 19,25 0,12 -19,25 -12,4 -30,-10 -8,-10" fill="#fb923c" />
+            </g>
+
+            <!-- Center: Large Translucent Shield-Shaped Prism (#1e293b with Soft #38bdf8 Glow) -->
+            <g id="s4-shield-prism" transform="translate(540, 810)">
+              <!-- Soft Flash Ring Upon Passing Through Prism -->
+              <path id="s4-prism-flash"
+                    d="M 0 -175 L 155 -112 L 155 18 C 155 112 88 174 0 212 C -88 174 -155 112 -155 18 L -155 -112 Z"
+                    fill="#38bdf8" fill-opacity="0" stroke="#38bdf8" stroke-width="6" opacity="0" filter="url(#glow-cyan)" />
+
+              <!-- Translucent Shield Prism Body -->
+              <path d="M 0 -155 L 136 -98 L 136 16 C 136 98 78 152 0 186 C -78 152 -136 98 -136 16 L -136 -98 Z"
+                    fill="#1e293b" fill-opacity="0.82" stroke="#38bdf8" stroke-width="4.5" stroke-linejoin="round" filter="url(#glow-cyan)" />
+              <!-- Internal Prism Facet Lines -->
+              <path d="M 0 -155 L 0 186 M -136 -98 L 0 12 L 136 -98"
+                    fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.32" />
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 5 (21.0s – 27.0s): BEAT 4 — Permanent Deletion of Trip Endpoints
+               =============================================================== -->
+          <g id="scene-5" class="scene-layer" clip-path="url(#s5-wipe-clip)">
+            <!-- Subtle Background Reference Grid -->
+            <g stroke="#1e293b" stroke-width="2" stroke-dasharray="10 14" opacity="0.55">
+              <line x1="160" y1="280" x2="920" y2="280" />
+              <line x1="160" y1="590" x2="920" y2="590" />
+              <line x1="160" y1="900" x2="920" y2="900" />
+              <line x1="160" y1="1210" x2="920" y2="1210" />
+              <line x1="340" y1="200" x2="340" y2="1400" />
+              <line x1="740" y1="200" x2="740" y2="1400" />
+            </g>
+
+            <!-- Soft Pulsing Waves Around Floating Middle Segment (Showing No Start or End Point) -->
+            <g id="s5-middle-waves" opacity="0" fill="none" stroke="#38bdf8" stroke-width="2.5">
+              <ellipse id="s5-wave-1" cx="540" cy="805" rx="140" ry="250" opacity="0.55" />
+              <ellipse id="s5-wave-2" cx="540" cy="805" rx="190" ry="300" opacity="0.3" />
+            </g>
+
+            <!-- Continuous S-Curved Vector Route Split Into Bottom 20%, Middle 60%, Top 20% -->
+            <g filter="url(#glow-cyan)" fill="none" stroke="#38bdf8" stroke-width="14" stroke-linecap="round">
+              <!-- Bottom 20% Segment (y: 1345 -> 1126) -->
+              <path id="s5-curve-bot"
+                    d="M 410 1345 C 345 1278, 330 1205, 375 1126"
+                    stroke-dasharray="255" stroke-dashoffset="255" />
+              <!-- Disconnected Middle 60% Segment (y: 1126 -> 484) -->
+              <path id="s5-curve-mid"
+                    d="M 375 1126 C 455 995, 685 910, 695 805 C 705 695, 455 615, 385 484"
+                    stroke-dasharray="810" stroke-dashoffset="810" />
+              <!-- Top 20% Segment (y: 484 -> 265) -->
+              <path id="s5-curve-top"
+                    d="M 385 484 C 345 408, 375 330, 460 265"
+                    stroke-dasharray="255" stroke-dashoffset="255" />
+            </g>
+
+            <!-- Bottom Start: Hollow Square Origin Marker (#f59e0b) -->
+            <g id="s5-origin-marker" transform="translate(410, 1345)" opacity="0">
+              <rect x="-22" y="-22" width="44" height="44" rx="6" fill="#0b1220" stroke="#f59e0b" stroke-width="5.5" />
+            </g>
+
+            <!-- Top End: Hollow Circle Destination Marker (#f59e0b) -->
+            <g id="s5-dest-marker" transform="translate(460, 265)" opacity="0">
+              <circle cx="0" cy="0" r="24" fill="#0b1220" stroke="#f59e0b" stroke-width="5.5" />
+            </g>
+
+            <!-- Geometric Fracture Particles for Bottom & Top Endpoint Dissolution -->
+            <g id="s5-particles-bot" opacity="0">
+              <rect x="396" y="1333" width="12" height="12" fill="#f59e0b" />
+              <polygon points="424,1340 436,1357 414,1357" fill="#f59e0b" />
+              <rect x="364" y="1258" width="10" height="10" fill="#38bdf8" />
+              <circle cx="352" cy="1215" r="6" fill="#38bdf8" />
+              <polygon points="382,1170 392,1184 374,1184" fill="#38bdf8" />
+              <rect x="372" y="1298" width="9" height="9" fill="#f59e0b" />
+            </g>
+
+            <g id="s5-particles-top" opacity="0">
+              <circle cx="458" cy="261" r="7" fill="#f59e0b" />
+              <polygon points="472,250 484,267 462,267" fill="#f59e0b" />
+              <rect x="412" y="315" width="10" height="10" fill="#38bdf8" />
+              <circle cx="378" cy="375" r="6" fill="#38bdf8" />
+              <polygon points="374,428 385,443 365,443" fill="#38bdf8" />
+              <rect x="435" y="280" width="9" height="9" fill="#f59e0b" />
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 6 (27.0s – 33.0s): BEAT 5 — Minimum User Threshold
+               =============================================================== -->
+          <g id="scene-6" class="scene-layer">
+            <!-- Horizontal Split Divider -->
+            <line x1="90" y1="860" x2="990" y2="860" stroke="#334155" stroke-width="2" stroke-dasharray="12 14" opacity="0.6" />
+
+            <!-- TOP ROAD SEGMENT (y = 540): Plain Uncolored Slate Gray (#1e293b) with 2 Widely Spaced Dots -->
+            <g transform="translate(0, 540)">
+              <rect x="70" y="-54" width="940" height="108" rx="20" fill="#1e293b" stroke="#334155" stroke-width="3" />
+              <line x1="105" y1="0" x2="975" y2="0" stroke="#0f1b2d" stroke-width="3.5" stroke-dasharray="26 22" />
+
+              <!-- Faint Dashed Outline Pulsing Briefly Around the Two Dots -->
+              <rect id="s6-top-pulse-box" x="150" y="-34" width="320" height="68" rx="34"
+                    fill="none" stroke="#94a3b8" stroke-width="3" stroke-dasharray="12 10" opacity="0" />
+
+              <!-- Two Widely Spaced White Vehicle Dots (#f8fafc) -->
+              <circle id="s6-top-dot-1" cx="195" cy="-18" r="11" fill="#f8fafc" />
+              <circle id="s6-top-dot-2" cx="425" cy="18" r="11" fill="#f8fafc" />
+            </g>
+
+            <!-- BOTTOM ROAD SEGMENT (y = 1160): Dense Group of 7 Dots + Vibrant Amber Glow (#f59e0b) -->
+            <g transform="translate(0, 1160)">
+              <rect x="70" y="-54" width="940" height="108" rx="20" fill="#1e293b" stroke="#334155" stroke-width="3" />
+              <line x1="105" y1="0" x2="975" y2="0" stroke="#0f1b2d" stroke-width="3.5" stroke-dasharray="26 22" />
+
+              <!-- Glowing Amber Traffic Overlay (#f59e0b) Filling Road Beneath Clustered Dots -->
+              <g filter="url(#glow-traffic)">
+                <rect id="s6-amber-overlay" x="86" y="-42" width="908" height="84" rx="14"
+                      fill="#f59e0b" fill-opacity="0.38" stroke="#f59e0b" stroke-width="4.5" opacity="0" />
+              </g>
+
+              <!-- Dense Group of Seven White Vehicle Dots (#f8fafc) -->
+              <g fill="#f8fafc">
+                <circle id="s6-bot-dot-1" cx="135" cy="-22" r="10" />
+                <circle id="s6-bot-dot-2" cx="195" cy="22" r="10" />
+                <circle id="s6-bot-dot-3" cx="240" cy="-22" r="10" />
+                <circle id="s6-bot-dot-4" cx="290" cy="22" r="10" />
+                <circle id="s6-bot-dot-5" cx="340" cy="-22" r="10" />
+                <circle id="s6-bot-dot-6" cx="385" cy="22" r="10" />
+                <circle id="s6-bot-dot-7" cx="435" cy="-22" r="10" />
+              </g>
+            </g>
+          </g>
+
+          <!-- ===============================================================
+               SCENE 7 (33.0s – 38.0s): BEAT 6 — Color-Coded Traffic Overlays
+               =============================================================== -->
+          <g id="scene-7" class="scene-layer">
+            <g id="s7-camera" transform-origin="540 800">
+              <defs>
+                <clipPath id="s7-city-clip">
+                  <path d="M 130 1330 C 110 1000 120 620 260 440 C 400 270 700 230 860 330 C 990 410 1010 800 960 1300 Z" />
+                </clipPath>
+              </defs>
+
+              <!-- Local streets: irregular, slightly rotated grid clipped to the area inside the ring expressway -->
+              <g clip-path="url(#s7-city-clip)">
+                <g transform="rotate(-9 540 800)" stroke="#1e293b" stroke-linecap="round" fill="none">
+                  <line x1="0" y1="380" x2="1080" y2="380" stroke-width="9" />
+                  <line x1="0" y1="520" x2="1080" y2="520" stroke-width="12" />
+                  <line x1="0" y1="610" x2="1080" y2="610" stroke-width="8" />
+                  <line x1="0" y1="770" x2="1080" y2="770" stroke-width="12" />
+                  <line x1="0" y1="900" x2="1080" y2="900" stroke-width="8" />
+                  <line x1="0" y1="1020" x2="1080" y2="1020" stroke-width="12" />
+                  <line x1="0" y1="1150" x2="1080" y2="1150" stroke-width="8" />
+                  <line x1="0" y1="1260" x2="1080" y2="1260" stroke-width="9" />
+                  <line x1="230" y1="150" x2="230" y2="1450" stroke-width="8" />
+                  <line x1="340" y1="150" x2="340" y2="1450" stroke-width="12" />
+                  <line x1="470" y1="150" x2="470" y2="1450" stroke-width="8" />
+                  <line x1="610" y1="150" x2="610" y2="1450" stroke-width="12" />
+                  <line x1="710" y1="150" x2="710" y2="1450" stroke-width="8" />
+                  <line x1="850" y1="150" x2="850" y2="1450" stroke-width="12" />
+                  <line x1="940" y1="150" x2="940" y2="1450" stroke-width="8" />
+                </g>
+                <g stroke="#1e293b" stroke-linecap="round" fill="none" stroke-width="8">
+                  <path d="M 150 900 C 230 960 300 1010 330 1100" />
+                  <path d="M 880 640 C 820 720 780 800 790 900" />
+                  <path d="M 300 560 C 380 540 440 480 520 480" />
+                  <path d="M 700 1100 C 770 1120 830 1180 850 1240" />
+                </g>
+              </g>
+
+              <!-- Ramps linking the avenue to the ring expressway -->
+              <g stroke="#1e293b" stroke-linecap="round" fill="none" stroke-width="16">
+                <path d="M 170 1190 Q 128 1205 118 1250" />
+                <path d="M 900 470 Q 950 450 985 490" />
+              </g>
+
+              <!-- Base arterials: ring expressway, diagonal avenue, downtown boulevard and cross street -->
+              <g stroke="#1e293b" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M 130 1330 C 110 1000 120 620 260 440 C 400 270 700 230 860 330 C 990 410 1010 800 960 1300" stroke-width="26" />
+                <path d="M 170 1190 C 280 1110 480 900 598 779 C 690 686 810 580 900 470" stroke-width="22" />
+                <path d="M 370 800 L 770 760" stroke-width="20" />
+                <path d="M 585 610 L 615 990" stroke-width="18" />
+              </g>
+
+              <!-- Sequential glowing traffic overlays -->
+              <g filter="url(#glow-traffic)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path id="s7-overlay-green" d="M 130 1330 C 110 1000 120 620 260 440 C 400 270 700 230 860 330 C 990 410 1010 800 960 1300" stroke="#22c55e" stroke-width="14" opacity="0" />
+                <path id="s7-overlay-amber" d="M 170 1190 C 280 1110 480 900 598 779 C 690 686 810 580 900 470" stroke="#f59e0b" stroke-width="13" opacity="0" />
+                <g id="s7-overlay-red" opacity="0">
+                  <path id="s7-red-h" d="M 385 798 L 755 762" stroke="#ef4444" stroke-width="15" />
+                  <path id="s7-red-v" d="M 586 625 L 614 975" stroke="#ef4444" stroke-width="15" />
+                </g>
+              </g>
+
+              <!-- Vehicle dots, placed by script along each road -->
+              <g fill="#f8fafc">
+                <circle id="s7-green-v1" r="8" />
+                <circle id="s7-green-v2" r="8" />
+                <circle id="s7-green-v3" r="8" />
+                <circle id="s7-green-v4" r="8" />
+                <circle id="s7-amber-v1" r="8" />
+                <circle id="s7-amber-v2" r="8" />
+                <circle id="s7-amber-v3" r="8" />
+                <circle id="s7-red-v1" r="8" />
+                <circle id="s7-red-v2" r="8" />
+                <circle id="s7-red-v3" r="8" />
+                <circle id="s7-red-v4" r="8" />
+                <circle id="s7-red-v5" r="8" />
+              </g>
+            </g>
+          </g>
+        </svg>
+
+        <!-- =================================================================
+             ON-SCREEN CAPTION SAFE ZONE (Bottom 110px, Horizontal Padding 68px)
+             ================================================================= -->
+        <div class="caption-safe-zone">
+          <div class="caption-pill">
+            <p id="cap-1" class="caption-text">
+              Have you wondered how Google Maps shows live traffic? Let's look at the GPS data mechanism behind it in this video.
+            </p>
+            <p id="cap-2" class="caption-text">
+              When you turn on location services on your phone and use Google Maps, GPS location and speed data goes from your mobile device to Google.
+            </p>
+            <p id="cap-3" class="caption-text">
+              Google analyzes these anonymous GPS locations sent by many mobile users. By calculating the speed of users on a road, it creates a live traffic map.
+            </p>
+            <p id="cap-4" class="caption-text">
+              To protect your privacy, Google uses data anonymization and aggregation. By combining data from many people in the same area, it makes it impossible to identify a single phone.
+            </p>
+            <p id="cap-5" class="caption-text">
+              Also, Google permanently deletes the start and end points of every trip. Because of this, no one can find out where a vehicle came from or where it went.
+            </p>
+            <p id="cap-6" class="caption-text">
+              If the minimum user threshold is not reached, a colored traffic overlay line will not be shown there.
+            </p>
+            <p id="cap-7" class="caption-text">
+              Google Maps uses color-coded overlay lines to show traffic conditions on roads where live data is available.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- END OF #composition -->
+    </div>
+  </main>
+
+  <!-- =======================================================================
+       OUTER STUDIO PREVIEWER TRANSPORT & SCRUBBER FOOTER (NOT IN #composition)
+       ======================================================================= -->
+  <footer class="shrink-0 border-t border-slate-800/90 bg-slate-950/95 backdrop-blur-md px-3 sm:px-6 py-2.5 z-30">
+    <div class="max-w-5xl mx-auto flex flex-col gap-2">
+
+      <!-- Interactive Timeline Scrubber with Scene Markers -->
+      <div class="flex flex-col gap-1">
+        <div class="relative h-4 text-[10px] font-mono-code text-slate-500">
+          <span class="absolute left-0 text-sky-400">00:00 S1</span>
+          <span class="absolute -translate-x-1/2" style="left: 7.89%;">S2</span>
+          <span class="absolute -translate-x-1/2" style="left: 23.68%;">S3</span>
+          <span class="absolute -translate-x-1/2" style="left: 39.47%;">S4</span>
+          <span class="absolute -translate-x-1/2" style="left: 55.26%;">S5</span>
+          <span class="absolute -translate-x-1/2" style="left: 71.05%;">S6</span>
+          <span class="absolute -translate-x-1/2" style="left: 86.84%;">S7</span>
+          <span class="absolute right-0">00:38</span>
+        </div>
+
+        <div
+          id="scrubber-container"
+          role="slider"
+          aria-label="Timeline Scrubber"
+          aria-valuemin="0"
+          aria-valuemax="38"
+          aria-valuenow="0"
+          tabindex="0"
+          class="scrubber-hitarea relative h-5 flex items-center cursor-pointer touch-none"
+        >
+          <div class="scrubber-track relative w-full h-1.5 bg-slate-800 rounded-full overflow-visible transition-all duration-150">
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 7.89%;"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 23.68%;"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 39.47%;"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 55.26%;"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 71.05%;"></div>
+            <div class="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-600 z-10" style="left: 86.84%;"></div>
+
+            <div id="scrubber-progress" class="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full" style="width: 0%;"></div>
+
+            <div
+              id="scrubber-thumb"
+              class="scrubber-thumb absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.85)] transition-transform duration-100 z-20"
+              style="left: 0%;"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transport Controls Row -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <!-- Left: Play/Pause, Restart, Frame Stepping -->
+        <div class="flex items-center gap-1.5">
+          <button
+            id="btn-play-pause"
+            type="button"
+            aria-label="Play or Pause"
+            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs sm:text-sm transition shadow-md shadow-sky-500/20 cursor-pointer"
+          >
+            <svg id="icon-play" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6 4 20 12 6 20 6 4" />
+            </svg>
+            <svg id="icon-pause" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="14" y="4" width="4" height="16" rx="1" />
+            </svg>
+            <span id="label-play-pause">Pause</span>
+          </button>
+
+          <button
+            id="btn-restart"
+            type="button"
+            title="Restart (00:00)"
+            class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+          </button>
+
+          <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+            <button
+              id="btn-prev-frame"
+              type="button"
+              title="Step Back 1 Frame (Left Arrow)"
+              class="px-2 py-1 rounded-md hover:bg-slate-800 text-xs font-mono-code text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              -1f
+            </button>
+            <span class="w-px h-3.5 bg-slate-800"></span>
+            <button
+              id="btn-next-frame"
+              type="button"
+              title="Step Forward 1 Frame (Right Arrow)"
+              class="px-2 py-1 rounded-md hover:bg-slate-800 text-xs font-mono-code text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              +1f
+            </button>
+          </div>
+        </div>
+
+        <!-- Center: Timecode & Frame Readout -->
+        <div class="flex items-center gap-2 sm:gap-3 bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-1.5 font-mono-code text-xs sm:text-sm">
+          <div class="flex items-center gap-1.5">
+            <span id="time-current" class="text-white font-semibold">00:00.00</span>
+            <span class="text-slate-600">/</span>
+            <span class="text-slate-400">00:38.00</span>
+          </div>
+          <span class="text-slate-700">|</span>
+          <div class="flex items-center gap-1.5 text-sky-400">
+            <span class="text-slate-500 text-[11px]">Frame</span>
+            <span id="frame-current" class="font-semibold">0</span>
+            <span class="text-slate-600">/</span>
+            <span class="text-slate-400">1140</span>
+          </div>
+        </div>
+
+        <!-- Right: Loop Toggle & Speed Selector (0.5x, 1x, 2x) -->
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-loop"
+            type="button"
+            aria-pressed="true"
+            title="Toggle Loop Playback"
+            class="px-2.5 py-1.5 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-mono-code font-medium transition cursor-pointer"
+          >
+            Loop: On
+          </button>
+
+          <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800" role="group" aria-label="Playback Speed">
+            <button type="button" data-speed="0.5" class="speed-btn px-2 py-1 rounded text-xs font-mono-code font-medium text-slate-400 hover:text-white transition cursor-pointer">0.5x</button>
+            <button type="button" data-speed="1" class="speed-btn px-2 py-1 rounded text-xs font-mono-code font-medium bg-slate-800 text-white shadow-sm transition cursor-pointer">1x</button>
+            <button type="button" data-speed="2" class="speed-btn px-2 py-1 rounded text-xs font-mono-code font-medium text-slate-400 hover:text-white transition cursor-pointer">2x</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Hidden Copy Notification Toast -->
+  <div id="toast-banner" class="fixed top-16 right-4 z-50 pointer-events-none opacity-0 translate-y-2 transition-all duration-200 px-3.5 py-2 rounded-lg bg-slate-900 border border-emerald-500/40 text-emerald-300 text-xs font-medium shadow-xl">
+    Copied standalone 1080×1920 Hyperframes HTML to clipboard
+  </div>
+
+  <!-- =======================================================================
+       RESILIENT GSAP LOADER GUARD
+       ======================================================================= -->
+  <script>
+    function ensureGsapReady() {
+      if (window.gsap) {
+        return Promise.resolve(window.gsap);
+      }
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[src*="gsap"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve(window.gsap));
+          existing.addEventListener("error", () => reject(new Error("Failed to load GSAP")));
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js";
+        script.onload = () => resolve(window.gsap);
+        script.onerror = () => reject(new Error("Failed to load GSAP"));
+        document.head.appendChild(script);
+      });
+    }
+  </script>
+
+  <!-- =======================================================================
+       HYPERFRAMES TIMELINE BUILDER (SHARED BY PREVIEWER & STANDALONE EXPORT)
+       ======================================================================= -->
+  <script id="hyperframes-timeline-script">
+    function buildHyperframesTimeline(onUpdateCallback, onCompleteCallback) {
+      const master = gsap.timeline({
+        paused: true,
+        onUpdate: onUpdateCallback,
+        onComplete: onCompleteCallback
+      });
+
+      // Strict initial reset so zero scenes or captions ever bleed/overlap on seek or loop
+      master.set(".scene-layer", { autoAlpha: 0, x: 0, y: 0 }, 0);
+      master.set(".caption-text", { autoAlpha: 0, y: 0 }, 0);
+      master.set("#scene-1", { autoAlpha: 1, opacity: 1, visibility: "visible" }, 0);
+
+      // Helper for non-overlapping caption crossfades with clean buffer
+      function showCaption(selector, startTime, endTime) {
+        const enterAt = startTime === 0 ? 0.0 : startTime + 0.04;
+        master.fromTo(selector,
+          { autoAlpha: 0, y: 10 },
+          { autoAlpha: 1, y: 0, duration: 0.3, ease: "power2.out" },
+          enterAt
+        );
+        if (endTime < 38.0) {
+          master.to(selector,
+            { autoAlpha: 0, y: -8, duration: 0.24, ease: "power2.in" },
+            endTime - 0.28
+          );
+          master.set(selector, { autoAlpha: 0 }, endTime);
+        }
+      }
+
+      // =====================================================================
+      // SCENE 1 (0.0s – 3.0s): HOOK — The Live Traffic Question
+      // =====================================================================
+      master.set("#scene-1", { autoAlpha: 1, opacity: 1, visibility: "visible" }, 0.001);
+      master.set("#s1-camera", { scale: 1, x: 0, y: 0 }, 0);
+      showCaption("#cap-1", 0.0, 3.0);
+
+      // Road grid scales in gently (ease-out, 0.6s)
+      master.fromTo("#s1-grid",
+        { scale: 0.88, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.6, ease: "power2.out" },
+        0.0
+      );
+
+      // Glowing color segments draw upward along the central artery (ease-in-out, 1.8s total: 0.2s -> 2.0s)
+      master.to("#s1-seg-green", { strokeDashoffset: 0, duration: 0.65, ease: "power2.inOut" }, 0.2);
+      master.to("#s1-seg-amber", { strokeDashoffset: 0, duration: 0.65, ease: "power2.inOut" }, 0.78);
+      master.to("#s1-seg-red",   { strokeDashoffset: 0, duration: 0.65, ease: "power2.inOut" }, 1.35);
+
+      // Three vehicle nodes glide upward at varying speeds (fast on green, medium on amber, slow on red)
+      master.fromTo("#s1-veh-1",
+        { attr: { transform: "translate(145, 1361)" } },
+        { attr: { transform: "translate(375, 1032)" }, duration: 2.85, ease: "none" },
+        0.0
+      );
+      master.fromTo("#s1-veh-2",
+        { attr: { transform: "translate(435, 946)" } },
+        { attr: { transform: "translate(595, 717)" }, duration: 2.85, ease: "none" },
+        0.0
+      );
+      master.fromTo("#s1-veh-3",
+        { attr: { transform: "translate(730, 524)" } },
+        { attr: { transform: "translate(815, 403)" }, duration: 2.85, ease: "none" },
+        0.0
+      );
+
+      // Subtle pulsing cyan rings radiating around vehicles (linear loop, 1.5s)
+      ["#s1-ring-1", "#s1-ring-2", "#s1-ring-3"].forEach((ring, idx) => {
+        master.fromTo(ring,
+          { attr: { r: 12 }, opacity: 0.9 },
+          { attr: { r: 44 }, opacity: 0, duration: 1.5, repeat: 1, ease: "none" },
+          idx * 0.25
+        );
+      });
+
+      // Transition to Scene 2: Smooth cross-dissolve (fade, 0.4s: 2.6s -> 3.0s) completing cleanly at 3.0s
+      master.to("#s1-camera", {
+        scale: 2.1,
+        x: 190,
+        y: -185,
+        duration: 0.4,
+        ease: "power2.inOut"
+      }, 2.6);
+      master.to("#scene-1", { autoAlpha: 0, duration: 0.4, ease: "power1.inOut" }, 2.6);
+      master.set("#scene-1", { autoAlpha: 0 }, 3.0);
+
+      // =====================================================================
+      // SCENE 2 (3.0s – 9.0s): BEAT 1 — Device GPS & Speed Telemetry
+      // =====================================================================
+      master.fromTo("#scene-2", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power1.inOut" }, 2.6);
+      master.set("#s2-slide-group", { y: 0 }, 2.6);
+      showCaption("#cap-2", 3.0, 9.0);
+
+      // 1. Phone pulses once (ease-out, 0.5s: 3.0s -> 3.5s)
+      master.fromTo("#s2-phone-pulse",
+        { scale: 1 },
+        { scale: 1.15, duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 },
+        3.0
+      );
+
+      // 2. Phone moves smoothly along curved road path from left to right (linear, 5.0s: 3.5s -> 8.5s)
+      const phoneCurveTracker = { t: 0.12 };
+      const phoneMoverEl = document.getElementById("s2-phone-mover");
+      function applyPhoneCurvePosition(t) {
+        if (!phoneMoverEl) return;
+        const p0x = 60, p0y = 1355;
+        const p1x = 540, p1y = 1195;
+        const p2x = 1020, p2y = 1355;
+        const mt = 1 - t;
+        const x = mt * mt * p0x + 2 * mt * t * p1x + t * t * p2x;
+        const y = mt * mt * p0y + 2 * mt * t * p1y + t * t * p2y;
+        const dx = 2 * mt * (p1x - p0x) + 2 * t * (p2x - p1x);
+        const dy = 2 * mt * (p1y - p0y) + 2 * t * (p2y - p1y);
+        const deg = (Math.atan2(dy, dx) * 180) / Math.PI;
+        phoneMoverEl.setAttribute("transform", `translate(${x.toFixed(1)}, ${(y - 18).toFixed(1)}) rotate(${(deg * 0.45).toFixed(1)})`);
+      }
+      applyPhoneCurvePosition(0.12);
+
+      master.to(phoneCurveTracker, {
+        t: 0.88,
+        duration: 5.0,
+        ease: "none",
+        onUpdate: () => applyPhoneCurvePosition(phoneCurveTracker.t)
+      }, 3.5);
+
+      // 3. Rhythmic streams of glowing cyan data packets detach from phone & travel up into cloud (ease-in, 1.5s per wave)
+      const s2Waves = [
+        { loc: "#s2-w1-loc", spd: "#s2-w1-spd", sx: 215, sy: 1270, ex: 485, ey: 385, start: 3.4 },
+        { loc: "#s2-w2-loc", spd: "#s2-w2-spd", sx: 375, sy: 1230, ex: 512, ey: 385, start: 4.3 },
+        { loc: "#s2-w3-loc", spd: "#s2-w3-spd", sx: 540, sy: 1215, ex: 540, ey: 385, start: 5.2 },
+        { loc: "#s2-w4-loc", spd: "#s2-w4-spd", sx: 705, sy: 1230, ex: 568, ey: 385, start: 6.1 },
+        { loc: "#s2-w5-loc", spd: "#s2-w5-spd", sx: 855, sy: 1270, ex: 595, ey: 385, start: 7.0 }
+      ];
+
+      s2Waves.forEach((w) => {
+        master.fromTo(w.loc,
+          { attr: { cx: w.sx, cy: w.sy }, opacity: 0.95 },
+          { attr: { cx: w.ex, cy: w.ey }, opacity: 0, duration: 1.5, ease: "power2.in" },
+          w.start
+        );
+        master.fromTo(w.spd,
+          { attr: { x: w.sx + 14, y: w.sy - 4 }, opacity: 0.9 },
+          { attr: { x: w.ex + 10, y: w.ey - 4 }, opacity: 0, duration: 1.5, ease: "power2.in" },
+          w.start + 0.14
+        );
+      });
+
+      // 4. Transition to Scene 3: Upward vertical slide (0.5s: 8.5s -> 9.0s) following data packets into cloud layer
+      master.set("#scene-3", { autoAlpha: 1, y: 1920 }, 8.5);
+      master.set("#s3-wipe-rect", { attr: { x: 0, width: 1080 } }, 8.5);
+      master.to("#s2-slide-group", { y: -1920, duration: 0.5, ease: "power2.inOut" }, 8.5);
+      master.to("#scene-3", { y: 0, duration: 0.5, ease: "power2.inOut" }, 8.5);
+      master.set("#scene-2", { autoAlpha: 0 }, 9.0);
+
+      // =====================================================================
+      // SCENE 3 (9.0s – 15.0s): BEAT 2 — Crowd-Sourced Speed Analysis
+      // =====================================================================
+      showCaption("#cap-3", 9.0, 15.0);
+
+      // Tiny moving geometric dots on horizontal road (wide spacing moves faster, tight cluster moves slower)
+      master.to("#s3-dot-w1", { attr: { cx: 230 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-w2", { attr: { cx: 395 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-w3", { attr: { cx: 510 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-w4", { attr: { cx: 310 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-w5", { attr: { cx: 485 }, duration: 5.6, ease: "none" }, 9.0);
+
+      master.to("#s3-dot-c1", { attr: { cx: 635 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c2", { attr: { cx: 685 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c3", { attr: { cx: 735 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c4", { attr: { cx: 785 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c5", { attr: { cx: 835 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c6", { attr: { cx: 885 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c7", { attr: { cx: 750 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c8", { attr: { cx: 805 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c9", { attr: { cx: 860 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c10", { attr: { cx: 935 }, duration: 5.6, ease: "none" }, 9.0);
+      master.to("#s3-dot-c11", { attr: { cx: 985 }, duration: 5.6, ease: "none" }, 9.0);
+
+      // 1. Data packets stream upward from all 8 devices into the central core (ease-in, 2.0s)
+      const s3DevicePackets = [
+        { el: "#s3-pkt-1", sx: 130, sy: 1380, ex: 515, ey: 395 },
+        { el: "#s3-pkt-2", sx: 247, sy: 1360, ex: 522, ey: 395 },
+        { el: "#s3-pkt-3", sx: 364, sy: 1345, ex: 529, ey: 395 },
+        { el: "#s3-pkt-4", sx: 481, sy: 1337, ex: 536, ey: 395 },
+        { el: "#s3-pkt-5", sx: 599, sy: 1337, ex: 544, ey: 395 },
+        { el: "#s3-pkt-6", sx: 716, sy: 1345, ex: 551, ey: 395 },
+        { el: "#s3-pkt-7", sx: 833, sy: 1360, ex: 558, ey: 395 },
+        { el: "#s3-pkt-8", sx: 950, sy: 1380, ex: 565, ey: 395 }
+      ];
+
+      s3DevicePackets.forEach((pkt) => {
+        master.fromTo(pkt.el,
+          { attr: { cx: pkt.sx, cy: pkt.sy }, opacity: 0.95 },
+          { attr: { cx: pkt.ex, cy: pkt.ey }, opacity: 0, duration: 2.0, ease: "power2.in" },
+          9.0
+        );
+      });
+
+      // 2. Central core pulses brightly (ease-in-out, 0.8s)
+      master.fromTo("#s3-core-orb",
+        { scale: 1, transformOrigin: "0px 0px" },
+        { scale: 1.38, duration: 0.4, ease: "power2.inOut", yoyo: true, repeat: 1 },
+        10.8
+      );
+      master.fromTo("#s3-core-pulse-ring",
+        { attr: { r: 110 }, opacity: 0.85 },
+        { attr: { r: 185 }, opacity: 0, duration: 0.8, ease: "power2.inOut" },
+        10.8
+      );
+
+      // 3. Projects downward scanning beams onto the horizontal road below (ease-out, 1.2s)
+      master.fromTo("#s3-scan-beams",
+        { opacity: 0, scaleY: 0.15, transformOrigin: "540px 380px" },
+        { opacity: 1, scaleY: 1, duration: 1.2, ease: "power2.out" },
+        11.2
+      );
+
+      // 4. Beams sweep across the road from left to right (linear, 2.5s: 12.0s -> 14.5s)
+      const beamSweep = { leftX: 60 };
+      const beamCone = document.getElementById("s3-beam-cone");
+      const beamEdgeL = document.getElementById("s3-beam-edge-l");
+      const beamEdgeR = document.getElementById("s3-beam-edge-r");
+      const beamBar = document.getElementById("s3-beam-bar");
+
+      master.set("#s3-road-green", { opacity: 0 }, 9.0);
+      master.set("#s3-road-red", { opacity: 0 }, 9.0);
+
+      master.to(beamSweep, {
+        leftX: 820,
+        duration: 2.5,
+        ease: "none",
+        onUpdate: () => {
+          const lx = beamSweep.leftX;
+          const rx = lx + 200;
+          if (beamCone) beamCone.setAttribute("points", `540,380 ${lx.toFixed(1)},964 ${rx.toFixed(1)},964`);
+          if (beamEdgeL) beamEdgeL.setAttribute("x2", lx.toFixed(1));
+          if (beamEdgeR) beamEdgeR.setAttribute("x2", rx.toFixed(1));
+          if (beamBar) beamBar.setAttribute("x", lx.toFixed(1));
+        }
+      }, 12.0);
+
+      // Road surface illuminates matching dot spacing: wide spacing -> green (#22c55e), tight clustering -> red (#ef4444)
+      master.to("#s3-road-green", { opacity: 1, duration: 0.75, ease: "power2.out" }, 12.35);
+      master.to("#s3-road-red", { opacity: 1, duration: 0.75, ease: "power2.out" }, 13.45);
+      master.to("#s3-scan-beams", { opacity: 0, duration: 0.3 }, 14.35);
+
+      // 5. Transition to Next Scene: Horizontal wipe left-to-right (0.4s: 14.6s -> 15.0s)
+      master.set("#scene-4", { autoAlpha: 1 }, 14.6);
+      master.to("#s3-wipe-rect", { attr: { x: 1080, width: 0 }, duration: 0.4, ease: "power2.inOut" }, 14.6);
+      master.set("#scene-3", { autoAlpha: 0 }, 15.0);
+
+      // =====================================================================
+      // SCENE 4 (15.0s – 21.0s): BEAT 3 — Anonymization & Aggregation
+      // =====================================================================
+      showCaption("#cap-4", 15.0, 21.0);
+
+      const s4ShapesStart = [
+        { el: "#s4-shape-1", x: 210, y: 340 },
+        { el: "#s4-shape-2", x: 345, y: 275 },
+        { el: "#s4-shape-3", x: 480, y: 355 },
+        { el: "#s4-shape-4", x: 615, y: 275 },
+        { el: "#s4-shape-5", x: 745, y: 350 },
+        { el: "#s4-shape-6", x: 870, y: 290 }
+      ];
+
+      s4ShapesStart.forEach((item) => {
+        master.set(item.el, { attr: { transform: `translate(${item.x}, ${item.y})` }, opacity: 1, scale: 1 }, 15.0);
+      });
+      master.set("#s4-unified-cluster", { attr: { transform: "translate(540, 960)" }, opacity: 0, scale: 0.45 }, 15.0);
+      master.set("#s4-prism-flash", { opacity: 0, fillOpacity: 0 }, 15.0);
+
+      // 1. Six distinct colored shapes drift downward into central shield prism (ease-in, 2.0s: 15.0s -> 17.0s)
+      s4ShapesStart.forEach((item, idx) => {
+        const targetX = 515 + idx * 10;
+        master.to(item.el, {
+          attr: { transform: `translate(${targetX}, 810)` },
+          scale: 0.55,
+          duration: 2.0,
+          ease: "power2.in"
+        }, 15.0);
+        master.to(item.el, { opacity: 0, duration: 0.25 }, 16.85);
+      });
+
+      // 2. Upon passing through prism (17.0s), soft flash occurs (ease-out, 0.4s: 17.0s -> 17.4s)
+      master.fromTo("#s4-prism-flash",
+        { opacity: 0.95, fillOpacity: 0.35 },
+        { opacity: 0, fillOpacity: 0, duration: 0.4, ease: "power2.out" },
+        17.0
+      );
+
+      // 3. Shapes emerge on bottom as identical uniform white circles grouped tightly together (ease-out, 2.2s: 17.2s -> 19.4s)
+      master.fromTo("#s4-unified-cluster",
+        { attr: { transform: "translate(540, 960)" }, opacity: 0, scale: 0.45 },
+        { attr: { transform: "translate(540, 1260)" }, opacity: 1, scale: 1.0, duration: 2.2, ease: "power2.out" },
+        17.2
+      );
+
+      // Collective wave drift (19.4s -> 21.0s)
+      master.to("#s4-unified-cluster", {
+        attr: { transform: "translate(595, 1252)" },
+        duration: 1.6,
+        ease: "sine.inOut"
+      }, 19.4);
+      // 4. Transition to Next Scene: Smooth fade (0.4s: 20.6s -> 21.0s) completing cleanly at 21.0s
+      master.to("#scene-4", { autoAlpha: 0, duration: 0.4, ease: "power1.inOut" }, 20.6);
+      master.set("#scene-4", { autoAlpha: 0 }, 21.0);
+
+      // =====================================================================
+      // SCENE 5 (21.0s – 27.0s): BEAT 4 — Permanent Deletion of Trip Endpoints
+      // =====================================================================
+      master.fromTo("#scene-5", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power1.inOut" }, 20.6);
+      master.set("#s5-wipe-rect", { attr: { x: 0, width: 1080 } }, 20.6);
+      showCaption("#cap-5", 21.0, 27.0);
+
+      master.set("#s5-curve-bot", { strokeDashoffset: 255, opacity: 1 }, 21.0);
+      master.set("#s5-curve-mid", { strokeDashoffset: 810, opacity: 1 }, 21.0);
+      master.set("#s5-curve-top", { strokeDashoffset: 255, opacity: 1 }, 21.0);
+      master.set(["#s5-origin-marker", "#s5-dest-marker"], { opacity: 0, scale: 1 }, 21.0);
+      master.set(["#s5-particles-bot", "#s5-particles-top", "#s5-middle-waves"], { opacity: 0 }, 21.0);
+
+      // 1. Full S-curve route draws on from bottom to top (ease-in-out, 1.5s: 21.0s -> 22.5s)
+      master.to("#s5-origin-marker", { opacity: 1, duration: 0.25 }, 21.0);
+      master.to("#s5-curve-bot", { strokeDashoffset: 0, duration: 0.35, ease: "power1.in" }, 21.0);
+      master.to("#s5-curve-mid", { strokeDashoffset: 0, duration: 0.8, ease: "none" }, 21.35);
+      master.to("#s5-curve-top", { strokeDashoffset: 0, duration: 0.35, ease: "power1.out" }, 22.15);
+      master.to("#s5-dest-marker", { opacity: 1, duration: 0.25 }, 22.25);
+
+      // 2. At 22.5s, top & bottom 20% segments + orange markers fracture into particles & dissolve (ease-out, 1.8s: 22.5s -> 24.3s)
+      master.to(["#s5-curve-bot", "#s5-origin-marker", "#s5-curve-top", "#s5-dest-marker"], {
+        opacity: 0,
+        duration: 0.45,
+        ease: "power2.out"
+      }, 22.5);
+
+      master.fromTo("#s5-particles-bot",
+        { opacity: 1, y: 0, scale: 1 },
+        { opacity: 0, y: 38, scale: 1.25, duration: 1.8, ease: "power2.out" },
+        22.5
+      );
+      master.fromTo("#s5-particles-top",
+        { opacity: 1, y: 0, scale: 1 },
+        { opacity: 0, y: -38, scale: 1.25, duration: 1.8, ease: "power2.out" },
+        22.5
+      );
+
+      // 3. Disconnected middle segment remains floating cleanly in center (24.5s -> 27.0s) with soft pulsing waves
+      master.to("#s5-middle-waves", { opacity: 1, duration: 0.4 }, 24.4);
+      master.fromTo("#s5-wave-1",
+        { attr: { rx: 130, ry: 240 }, opacity: 0.65 },
+        { attr: { rx: 175, ry: 285 }, opacity: 0.15, duration: 1.3, yoyo: true, repeat: 1, ease: "sine.inOut" },
+        24.4
+      );
+      master.fromTo("#s5-wave-2",
+        { attr: { rx: 175, ry: 285 }, opacity: 0.4 },
+        { attr: { rx: 225, ry: 335 }, opacity: 0.08, duration: 1.3, yoyo: true, repeat: 1, ease: "sine.inOut" },
+        24.4
+      );
+
+      // 4. Transition to Next Scene: Left-to-right wipe (0.4s: 26.6s -> 27.0s)
+      master.set("#scene-6", { autoAlpha: 1 }, 26.6);
+      master.to("#s5-wipe-rect", { attr: { x: 1080, width: 0 }, duration: 0.4, ease: "power2.inOut" }, 26.6);
+      master.set("#scene-5", { autoAlpha: 0 }, 27.0);
+
+      // =====================================================================
+      // SCENE 6 (27.0s – 33.0s): BEAT 5 — Minimum User Threshold
+      // =====================================================================
+      showCaption("#cap-6", 27.0, 33.0);
+
+      master.set("#s6-amber-overlay", { opacity: 0 }, 27.0);
+      master.set("#s6-top-pulse-box", { opacity: 0 }, 27.0);
+
+      // Both sets of vehicle dots travel left to right (linear, 5.5s: 27.0s -> 32.5s)
+      master.fromTo("#s6-top-dot-1", { attr: { cx: 165 } }, { attr: { cx: 690 }, duration: 5.5, ease: "none" }, 27.0);
+      master.fromTo("#s6-top-dot-2", { attr: { cx: 395 } }, { attr: { cx: 920 }, duration: 5.5, ease: "none" }, 27.0);
+
+      // Top road: faint dashed outline pulses briefly around the two dots and fades out (ease-in-out, 1.2s: 28.2s -> 29.4s)
+      master.fromTo("#s6-top-pulse-box",
+        { attr: { x: 245 }, opacity: 0 },
+        { attr: { x: 300 }, opacity: 0.85, duration: 0.6, ease: "power2.inOut" },
+        28.2
+      );
+      master.to("#s6-top-pulse-box",
+        { attr: { x: 360 }, opacity: 0, duration: 0.6, ease: "power2.inOut" },
+        28.8
+      );
+
+      // Bottom road: dense group of 7 white vehicle dots travels left to right (linear, 5.5s: 27.0s -> 32.5s)
+      const s6BotOffsets = [135, 195, 240, 290, 340, 385, 435];
+      s6BotOffsets.forEach((startX, i) => {
+        master.fromTo(`#s6-bot-dot-${i + 1}`,
+          { attr: { cx: startX } },
+          { attr: { cx: startX + 495 }, duration: 5.5, ease: "none" },
+          27.0
+        );
+      });
+
+      // Bottom road: once 7 dots cluster together (29.0s), glowing amber traffic overlay smoothly fills road (ease-out, 1.5s: 29.0s -> 30.5s)
+      master.fromTo("#s6-amber-overlay",
+        { opacity: 0 },
+        { opacity: 1, duration: 1.5, ease: "power2.out" },
+        29.0
+      );
+
+      // Transition to Next Scene: Smooth fade (0.4s: 32.6s -> 33.0s) zooming into colored road network
+      master.to("#scene-6", { autoAlpha: 0, duration: 0.4, ease: "power1.inOut" }, 32.6);
+      master.set("#scene-6", { autoAlpha: 0 }, 33.0);
+
+      // =====================================================================
+      // SCENE 7 (33.0s – 38.0s): BEAT 6 — Color-Coded Traffic Overlays
+      // =====================================================================
+      master.fromTo("#scene-7", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power1.inOut" }, 32.6);
+      showCaption("#cap-7", 33.0, 38.0);
+
+      master.fromTo("#s7-camera",
+        { scale: 1.12 },
+        { scale: 1.0, duration: 0.9, ease: "power2.out" },
+        32.6
+      );
+
+      // Green, amber, and red overlays illuminate sequentially across respective roads (ease-out, 1.2s staggered)
+      master.fromTo("#s7-overlay-green", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 33.1);
+      master.fromTo("#s7-overlay-amber", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 33.45);
+      master.fromTo("#s7-overlay-red",   { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 33.8);
+
+      // Vehicle dots follow the road geometry: fast on green, moderate on amber, slow in the red bottleneck
+      const s7Roads = [
+        { path: "#s7-overlay-green", dist: 700, dots: [["s7-green-v1", 0.04], ["s7-green-v2", 0.34], ["s7-green-v3", 0.62], ["s7-green-v4", 0.8]] },
+        { path: "#s7-overlay-amber", dist: 280, dots: [["s7-amber-v1", 0.06], ["s7-amber-v2", 0.4], ["s7-amber-v3", 0.68]] },
+        { path: "#s7-red-v", dist: 60, dots: [["s7-red-v1", 0.12], ["s7-red-v2", 0.45], ["s7-red-v3", 0.78]] },
+        { path: "#s7-red-h", dist: 60, dots: [["s7-red-v4", 0.18], ["s7-red-v5", 0.72]] },
+      ];
+      const s7Vehicles = [];
+      s7Roads.forEach((road) => {
+        const pathEl = document.querySelector(road.path);
+        const total = pathEl.getTotalLength();
+        road.dots.forEach(([id, frac]) => {
+          s7Vehicles.push({
+            el: document.getElementById(id),
+            path: pathEl,
+            start: Math.min(frac * total, total - road.dist - 4),
+            dist: road.dist,
+          });
+        });
+      });
+      const s7Flow = { p: 0 };
+      function s7Place(p) {
+        s7Vehicles.forEach((v) => {
+          const pt = v.path.getPointAtLength(v.start + v.dist * p);
+          v.el.setAttribute("cx", pt.x.toFixed(1));
+          v.el.setAttribute("cy", pt.y.toFixed(1));
+        });
+      }
+      s7Place(0);
+      master.fromTo(s7Flow, { p: 0 }, { p: 1, duration: 5.0, ease: "none", onUpdate: () => s7Place(s7Flow.p) }, 33.0);
+
+      // Hold final frame 0.5s (37.5s -> 38.0s)
+      master.to({}, { duration: 0.5 }, 37.5);
+
+      return master;
+    }
+
+    // Standard Hyperframes Hook Initialization (Standalone Mode)
+    document.addEventListener("DOMContentLoaded", () => {
+      const isStudioMode = Boolean(document.getElementById("viewport-stage"));
+      if (!isStudioMode) {
+        ensureGsapReady().then(() => {
+          const standaloneTimeline = buildHyperframesTimeline();
+          window.__HYPERFRAMES_TIMELINE__ = standaloneTimeline;
+          window.seekToTime = (seconds) => standaloneTimeline.time(Math.max(0, Math.min(38, seconds)));
+          if (!navigator.webdriver) {
+            standaloneTimeline.play();
+          }
+        });
+      }
+    });
+  </script>
+
+  <!-- =======================================================================
+       EXTERNAL STUDIO PREVIEWER CONTROLLER & STANDALONE HTML GENERATOR
+       ======================================================================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      ensureGsapReady().then(() => {
+        const COMP_WIDTH = 1080;
+        const COMP_HEIGHT = 1920;
+        const FPS = 30;
+        const DURATION = 38.0;
+        const TOTAL_FRAMES = Math.round(DURATION * FPS);
+
+        const viewportStage = document.getElementById("viewport-stage");
+        const scaleWrapper = document.getElementById("scale-wrapper");
+        const compositionEl = document.getElementById("composition");
+        const zoomBadge = document.getElementById("zoom-badge");
+
+        const btnPlayPause = document.getElementById("btn-play-pause");
+        const iconPlay = document.getElementById("icon-play");
+        const iconPause = document.getElementById("icon-pause");
+        const labelPlayPause = document.getElementById("label-play-pause");
+        const btnRestart = document.getElementById("btn-restart");
+        const btnPrevFrame = document.getElementById("btn-prev-frame");
+        const btnNextFrame = document.getElementById("btn-next-frame");
+        const btnLoop = document.getElementById("btn-loop");
+        const speedButtons = document.querySelectorAll(".speed-btn");
+        const scenePills = document.querySelectorAll(".scene-pill");
+
+        const scrubberContainer = document.getElementById("scrubber-container");
+        const scrubberProgress = document.getElementById("scrubber-progress");
+        const scrubberThumb = document.getElementById("scrubber-thumb");
+        const timeCurrentEl = document.getElementById("time-current");
+        const frameCurrentEl = document.getElementById("frame-current");
+
+        const btnCopyHtml = document.getElementById("btn-copy-html");
+        const copyBtnLabel = document.getElementById("copy-btn-label");
+        const toastBanner = document.getElementById("toast-banner");
+
+        let isScrubbing = false;
+        let wasPlayingBeforeScrub = false;
+        let isLoopEnabled = true;
+        let currentActiveScene = 1;
+
+        // 1. Responsive Scaling for 1080x1920 Stage
+        function fitCompositionToViewport() {
+          const rect = viewportStage.getBoundingClientRect();
+          const availW = Math.max(120, rect.width - 28);
+          const availH = Math.max(180, rect.height - 28);
+          const scale = Math.min(availW / COMP_WIDTH, availH / COMP_HEIGHT);
+
+          compositionEl.style.transform = `scale(${scale})`;
+          scaleWrapper.style.width = `${Math.round(COMP_WIDTH * scale)}px`;
+          scaleWrapper.style.height = `${Math.round(COMP_HEIGHT * scale)}px`;
+          zoomBadge.textContent = `Scale: ${Math.round(scale * 100)}%`;
+        }
+
+        window.addEventListener("resize", fitCompositionToViewport);
+        fitCompositionToViewport();
+
+        // 2. Build Master GSAP Timeline
+        const master = buildHyperframesTimeline(syncUIWithTimeline, () => {
+          if (!isScrubbing && isLoopEnabled) {
+            master.restart();
+          } else if (!isScrubbing) {
+            updatePlayPauseState(false);
+          }
+        });
+
+        window.__HYPERFRAMES_TIMELINE__ = master;
+        window.seekToTime = (seconds) => {
+          const clamped = Math.max(0, Math.min(DURATION, seconds));
+          master.time(clamped);
+          syncUIWithTimeline();
+        };
+
+        function formatTimecode(sec) {
+          const clamped = Math.max(0, Math.min(DURATION, sec));
+          const mins = Math.floor(clamped / 60);
+          const secs = Math.floor(clamped % 60);
+          const hundredths = Math.floor((clamped - Math.floor(clamped)) * 100);
+          return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${String(hundredths).padStart(2, "0")}`;
+        }
+
+        function getSceneIndexForTime(t) {
+          if (t < 3.0) return 1;
+          if (t < 9.0) return 2;
+          if (t < 15.0) return 3;
+          if (t < 21.0) return 4;
+          if (t < 27.0) return 5;
+          if (t < 33.0) return 6;
+          return 7;
+        }
+
+        function updateActiveScenePill(sceneIdx) {
+          if (sceneIdx === currentActiveScene) return;
+          currentActiveScene = sceneIdx;
+          scenePills.forEach((pill) => {
+            const idx = Number(pill.dataset.sceneIdx);
+            if (idx === sceneIdx) {
+              pill.className = "scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-sky-500/20 text-sky-300 border border-sky-500/40 transition cursor-pointer whitespace-nowrap";
+            } else {
+              pill.className = "scene-pill px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap";
+            }
+          });
+        }
+
+        function syncUIWithTimeline() {
+          const t = master.time();
+          const pct = (t / DURATION) * 100;
+          const frame = Math.min(TOTAL_FRAMES, Math.round(t * FPS));
+
+          scrubberProgress.style.width = `${pct}%`;
+          scrubberThumb.style.left = `${pct}%`;
+          scrubberContainer.setAttribute("aria-valuenow", t.toFixed(2));
+          timeCurrentEl.textContent = formatTimecode(t);
+          frameCurrentEl.textContent = String(frame);
+
+          updateActiveScenePill(getSceneIndexForTime(t));
+        }
+
+        function updatePlayPauseState(isPlaying) {
+          if (isPlaying) {
+            iconPlay.classList.add("hidden");
+            iconPause.classList.remove("hidden");
+            labelPlayPause.textContent = "Pause";
+          } else {
+            iconPause.classList.add("hidden");
+            iconPlay.classList.remove("hidden");
+            labelPlayPause.textContent = "Play";
+          }
+        }
+
+        // 3. Transport Event Listeners
+        btnPlayPause.addEventListener("click", () => {
+          if (master.paused()) {
+            if (master.time() >= DURATION - 0.02) {
+              master.restart();
+            } else {
+              master.play();
+            }
+            updatePlayPauseState(true);
+          } else {
+            master.pause();
+            updatePlayPauseState(false);
+          }
+        });
+
+        btnRestart.addEventListener("click", () => {
+          master.time(0).play();
+          updatePlayPauseState(true);
+          syncUIWithTimeline();
+        });
+
+        function stepFrame(deltaFrames) {
+          master.pause();
+          updatePlayPauseState(false);
+          const currentFrame = Math.round(master.time() * FPS);
+          const nextFrame = Math.max(0, Math.min(TOTAL_FRAMES, currentFrame + deltaFrames));
+          master.time(nextFrame / FPS);
+          syncUIWithTimeline();
+        }
+
+        btnPrevFrame.addEventListener("click", () => stepFrame(-1));
+        btnNextFrame.addEventListener("click", () => stepFrame(1));
+
+        btnLoop.addEventListener("click", () => {
+          isLoopEnabled = !isLoopEnabled;
+          btnLoop.setAttribute("aria-pressed", String(isLoopEnabled));
+          btnLoop.textContent = isLoopEnabled ? "Loop: On" : "Loop: Off";
+          if (isLoopEnabled) {
+            btnLoop.className = "px-2.5 py-1.5 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-mono-code font-medium transition cursor-pointer";
+          } else {
+            btnLoop.className = "px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono-code font-medium transition cursor-pointer";
+          }
+        });
+
+        // Scene Jump Pills
+        scenePills.forEach((pill) => {
+          pill.addEventListener("click", () => {
+            const targetTime = parseFloat(pill.dataset.seek);
+            master.time(targetTime);
+            syncUIWithTimeline();
+          });
+        });
+
+        // Playback Speed Controls
+        speedButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const speed = parseFloat(btn.dataset.speed);
+            master.timeScale(speed);
+            speedButtons.forEach((b) => {
+              b.className = "speed-btn px-2 py-1 rounded text-xs font-mono-code font-medium text-slate-400 hover:text-white transition cursor-pointer";
+            });
+            btn.className = "speed-btn px-2 py-1 rounded text-xs font-mono-code font-medium bg-slate-800 text-white shadow-sm transition cursor-pointer";
+          });
+        });
+
+        // 4. Scrubber Drag & Touch Handling
+        function scrubFromClientX(clientX) {
+          const rect = scrubberContainer.getBoundingClientRect();
+          const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+          master.time(ratio * DURATION);
+          syncUIWithTimeline();
+        }
+
+        scrubberContainer.addEventListener("pointerdown", (e) => {
+          isScrubbing = true;
+          wasPlayingBeforeScrub = !master.paused();
+          master.pause();
+          updatePlayPauseState(false);
+          scrubberContainer.setPointerCapture(e.pointerId);
+          scrubFromClientX(e.clientX);
+        });
+
+        scrubberContainer.addEventListener("pointermove", (e) => {
+          if (!isScrubbing) return;
+          scrubFromClientX(e.clientX);
+        });
+
+        function endScrub(e) {
+          if (!isScrubbing) return;
+          isScrubbing = false;
+          if (scrubberContainer.hasPointerCapture(e.pointerId)) {
+            scrubberContainer.releasePointerCapture(e.pointerId);
+          }
+          if (wasPlayingBeforeScrub) {
+            master.play();
+            updatePlayPauseState(true);
+          }
+        }
+
+        scrubberContainer.addEventListener("pointerup", endScrub);
+        scrubberContainer.addEventListener("pointercancel", endScrub);
+
+        // Keyboard Shortcuts
+        window.addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            btnPlayPause.click();
+          } else if (e.code === "ArrowLeft") {
+            e.preventDefault();
+            stepFrame(-1);
+          } else if (e.code === "ArrowRight") {
+            e.preventDefault();
+            stepFrame(1);
+          }
+        });
+
+        // 5. Copy Clean Standalone Hyperframes HTML (Without Studio Chrome)
+        function generateStandaloneHTML() {
+          const clonedComp = compositionEl.cloneNode(true);
+          clonedComp.removeAttribute("style");
+          const timelineCode = document.getElementById("hyperframes-timeline-script").textContent;
+
+          return [
+            "<!DOCTYPE html>",
+            '<html lang="en">',
+            "<head>",
+            '  <meta charset="UTF-8" />',
+            '  <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0" />',
+            "  <title>Live Traffic GPS Mechanism — Hyperframes 9:16 Composition</title>",
+            '  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>',
+            "  <style>",
+            "    * { box-sizing: border-box; margin: 0; padding: 0; }",
+            "    html, body {",
+            "      width: 1080px;",
+            "      height: 1920px;",
+            "      overflow: hidden;",
+            "      background: #0b1220;",
+            '      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;',
+            "      color: #f8fafc;",
+            "    }",
+            "    #composition {",
+            "      position: relative;",
+            "      width: 1080px;",
+            "      height: 1920px;",
+            "      overflow: hidden;",
+            "      background: linear-gradient(180deg, #0b1220 0%, #0f1b2d 55%, #0b1220 100%);",
+            "    }",
+            "    .stage-svg { position: absolute; inset: 0; width: 1080px; height: 1920px; display: block; }",
+            "    .scene-layer { opacity: 0; visibility: hidden; }",
+            "    .caption-safe-zone {",
+            "      position: absolute;",
+            "      left: 0; right: 0; bottom: 110px;",
+            "      padding: 0 68px;",
+            "      display: flex; justify-content: center;",
+            "      pointer-events: none; z-index: 20;",
+            "    }",
+            "    .caption-pill {",
+            "      position: relative; width: 100%; min-height: 224px;",
+            "      background: rgba(11, 18, 32, 0.9);",
+            "      border: 1.5px solid rgba(56, 189, 248, 0.32);",
+            "      border-radius: 30px; padding: 38px 52px;",
+            "      display: grid; grid-template-columns: 1fr;",
+            "      align-items: center; justify-items: center;",
+            "      text-align: center;",
+            "    }",
+            "    .caption-text {",
+            "      grid-area: 1 / 1; position: relative; width: 100%; margin: 0;",
+            "      padding: 4px 6px;",
+            "      font-size: 36px; font-weight: 600; line-height: 1.38;",
+            "      color: #f8fafc; opacity: 0; visibility: hidden;",
+            "    }",
+            "  </style>",
+            "</head>",
+            "<body>",
+            clonedComp.outerHTML,
+            "  <script>",
+            timelineCode,
+            "  <\/script>",
+            "</body>",
+            "</html>"
+          ].join("\n");
+        }
+
+        btnCopyHtml.addEventListener("click", () => {
+          const standalone = generateStandaloneHTML();
+          const textarea = document.createElement("textarea");
+          textarea.value = standalone;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand("copy");
+            copyBtnLabel.textContent = "Copied!";
+            toastBanner.classList.remove("opacity-0", "translate-y-2");
+            setTimeout(() => {
+              copyBtnLabel.textContent = "Copy Standalone HTML";
+              toastBanner.classList.add("opacity-0", "translate-y-2");
+            }, 2200);
+          } finally {
+            document.body.removeChild(textarea);
+          }
+        });
+
+        // Start playback on load unless driven by headless renderer
+        if (!navigator.webdriver) {
+          master.play();
+          updatePlayPauseState(true);
+        } else {
+          master.time(0);
+          syncUIWithTimeline();
+          updatePlayPauseState(false);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
